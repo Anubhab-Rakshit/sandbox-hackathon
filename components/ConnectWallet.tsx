@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { usePolyClass } from '@/components/poly/PolyProvider'
+import { useWallet } from './WalletProvider'
 
 const HEX_CHARS = '0123456789ABCDEF'
 const N_PARTICLES = 20
@@ -30,6 +31,8 @@ export default function ConnectWallet() {
     const [booted, setBooted] = useState(false)
     const targetRadiusRef = useRef(1) // 0-1 for tractor beam
 
+    const { isActive, address, connectWallet } = useWallet()
+
     // Polymorphic Hook: gets session-mutated class name
     const polyConnectClass = usePolyClass('connect-wallet-btn')
 
@@ -51,12 +54,14 @@ export default function ConnectWallet() {
 
     // Session scramble cycle
     useEffect(() => {
+        if (isActive) return
         const interval = setInterval(() => setSession(randomHex(6)), 4000)
         return () => clearInterval(interval)
-    }, [])
+    }, [isActive])
 
     // Glitch reshape every 6 seconds
     useEffect(() => {
+        if (isActive) return
         const doGlitch = () => {
             setGlitching(true)
             // Scramble session during glitch
@@ -76,7 +81,7 @@ export default function ConnectWallet() {
 
         const glitchInterval = setInterval(doGlitch, 6000)
         return () => clearInterval(glitchInterval)
-    }, [])
+    }, [isActive])
 
     // Hover tractor beam
     useEffect(() => {
@@ -127,7 +132,7 @@ export default function ConnectWallet() {
                 el.style.opacity = String(0.4 + 0.6 * Math.max(0, pulse))
 
                 const glowIntensity = Math.max(0, pulse) * 10
-                el.style.textShadow = p.isCyan
+                el.style.textShadow = p.isCyan || isActive // Turn all cyan if protected
                     ? `0 0 ${glowIntensity}px #00FFD1`
                     : `0 0 ${glowIntensity}px #7B2FFF`
             })
@@ -137,9 +142,11 @@ export default function ConnectWallet() {
 
         localAnimId = requestAnimationFrame(animate)
         return () => cancelAnimationFrame(localAnimId)
-    }, [])
+    }, [isActive])
 
     const handleClick = async () => {
+        if (isActive) return // Already connected
+
         // 1. Check Threat Tier from Cookie
         const cookies = document.cookie.split('; ')
         const threatCookie = cookies.find(row => row.startsWith('bb-threat-score='))
@@ -195,39 +202,32 @@ export default function ConnectWallet() {
             }
         }
 
-        // 3. Normal Flow 
-        setGlitching(true)
+        // 3. Normal Human Flow
+        console.log('[Connecting] Firing Ethereum provider request...')
+        await connectWallet() // This triggers the MetaMask extension
 
-        console.log('[Connecting] Injecting simulated tx into proxy...')
-        // We simulate a Web3 dApp automatically trying to read state 
-        // upon connection, routing it to our Python Backend.
+        // Maintain the dummy ping for the dashboard threat mapper if they 
+        // fallback or just explicitly tested the honeypot
         fetch('/api/rpc', {
             method: 'POST',
             headers: {
-                'X-Force-Bot': 'true', // Force the backend honeypot trap for manual demo clicks
+                'X-Force-Bot': 'true',
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 jsonrpc: "2.0",
                 method: "eth_sendRawTransaction",
-                params: ["0xf86b018..."], // simulated drainer payload
+                params: ["0xf86b018..."],
                 id: 1
             })
-        }).catch(() => { }) // We don't care about the result for the connect button
+        }).catch(() => { })
 
         setTimeout(() => {
             window.dispatchEvent(new Event('wallet-connect'))
-            setSession(randomHex(6))
-            setGlitching(false)
-
-            // For Demo Purposes: 
-            // We wait a few seconds and then forcefully trigger the backend 
-            // SQLite session garbage collector so the manual click pops up on the screen
-            // without requiring 10+ random polling events.
+            // For Demo Purposes: flush the engine
             setTimeout(() => {
                 fetch('http://localhost:8000/api/flush', { method: 'POST' }).catch(() => { })
             }, 1000)
-
         }, 600)
     }
 
@@ -256,7 +256,7 @@ export default function ConnectWallet() {
                         key={i}
                         cx="120" cy="120" r={cfg.r}
                         fill="none"
-                        stroke={cfg.color}
+                        stroke={isActive ? 'rgba(0,255,209,0.4)' : cfg.color}
                         strokeWidth={cfg.width}
                         strokeDasharray={cfg.dash}
                         className={cfg.speed}
@@ -277,8 +277,8 @@ export default function ConnectWallet() {
                         key={i}
                         className="orbit-particle absolute will-change-transform"
                         style={{
-                            color: p.isCyan ? '#00FFD1' : '#7B2FFF',
-                            boxShadow: `0 0 6px ${p.isCyan ? 'rgba(0,255,209,0.4)' : 'rgba(123,47,255,0.4)'}`,
+                            color: p.isCyan || isActive ? '#00FFD1' : '#7B2FFF',
+                            boxShadow: `0 0 6px ${p.isCyan || isActive ? 'rgba(0,255,209,0.4)' : 'rgba(123,47,255,0.4)'}`,
                             background: 'none',
                         }}
                     >
@@ -292,17 +292,26 @@ export default function ConnectWallet() {
                 id="connect-btn"
                 className={`${polyConnectClass} ${glitching ? 'glitch-active' : ''}`}
                 onClick={handleClick}
-                aria-label="Connect Wallet"
+                aria-label={isActive ? "Wallet Protected" : "Connect Wallet"}
             >
-                <div className="hex-glow" aria-hidden="true" />
-                <div className="hex-border" aria-hidden="true" />
+                <div className="hex-glow" style={isActive ? { background: 'radial-gradient(circle, rgba(0,255,209,0.6) 0%, transparent 70%)', opacity: 1 } : {}} aria-hidden="true" />
+                <div className="hex-border" style={isActive ? { borderColor: '#00FFD1', boxShadow: '0 0 20px rgba(0,255,209,0.5)' } : {}} aria-hidden="true" />
                 <div className="hex-clip" aria-hidden="true" />
 
-                <span className={`btn-label ${glitching ? 'glitch-text' : ''}`}>
-                    Connect<br />Wallet
+                <span className={`btn-label ${glitching && !isActive ? 'glitch-text' : ''}`}>
+                    {isActive ? (
+                        <>
+                            <span className="text-[24px] mb-1 block leading-none">🛡️</span>
+                            <span className="text-[#00FFD1]">PROTECTED</span>
+                        </>
+                    ) : (
+                        <>
+                            Connect<br />Wallet
+                        </>
+                    )}
                 </span>
                 <span className="btn-sublabel" aria-live="polite">
-                    {session.slice(0, 8)}
+                    {isActive && address ? address.slice(0, 8) + '...' : session.slice(0, 8)}
                 </span>
             </button>
         </div>

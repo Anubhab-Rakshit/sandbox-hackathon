@@ -74,3 +74,36 @@ def classify_attack(payload: str, headers: dict) -> AttackClassification:
         inferred_toolchain=inferred_toolchain,
         confidence=confidence
     )
+
+def infer_toolchain_from_sequence(payloads: list) -> Optional[str]:
+    """
+    Analyzes the chronological sequence of JSON-RPC methods called 
+    to definitively fingerprint the hacking tool.
+    """
+    if not payloads:
+        return None
+        
+    methods = [p.method for p in payloads]
+    seq_str = ",".join(methods)
+    
+    # 1. Definite Drainers
+    if "eth_chainId,eth_accounts,eth_getBalance" in seq_str:
+        return "MetaMask Drainer Script"
+        
+    if "eth_estimateGas,eth_sendRawTransaction" in seq_str:
+        return "Exploit Executer (Targeted)"
+        
+    # 2. MEV Bots / Arbitrage
+    # Looking for repetitive rapid-fire contract calls
+    if methods.count("eth_call") > 5 and len(set(methods[-4:])) == 1:
+        return "Automated Arbitrage/MEV Bot"
+        
+    # 3. Node Indexing / Data Scraping
+    if methods.count("eth_getBlockByNumber") > 3 or methods.count("eth_getLogs") > 3:
+        return "Node Indexer Scraping Script"
+        
+    # 4. Reconnaissance Tooling
+    if "eth_getCode,eth_getStorageAt" in seq_str:
+        return "Vuln Scanner (Recon)"
+        
+    return None

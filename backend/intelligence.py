@@ -106,6 +106,23 @@ class ThreatIntelligenceLogger:
             timestamp=datetime.utcnow().isoformat() + "Z",
             decoded_intent=intent
         ))
+        
+        # 4. Fingerprint the toolchain based on the sequence of calls
+        try:
+            from classifier import infer_toolchain_from_sequence
+            advanced_inference = infer_toolchain_from_sequence(record.payloads)
+            
+            if advanced_inference:
+                # Upgrade their inferred toolchain with our definitive sequence deduction
+                record.classification.inferred_toolchain = advanced_inference
+                
+                # If they were classified as script_kiddie but we detected a targeted drainer/bot
+                if record.classification.sophistication == "script_kiddie":
+                    record.classification.sophistication = "advanced"
+        except Exception as e:
+            import traceback
+            print(f"Sequence inference soft-failed: {e}")
+            traceback.print_exc()
 
     def escalate(self, session_id: str, new_tier: int):
         if session_id not in self.active_threats:

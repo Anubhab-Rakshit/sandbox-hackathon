@@ -137,3 +137,49 @@ def _fallback_static_response(payload: str) -> Dict[str, Any]:
             "id": None,
             "error": {"code": -32700, "message": "Parse error"}
         }
+
+async def generate_executive_summary(threat_record: dict) -> str:
+    """Uses LLaMA 3 to write a 3-4 sentence plain English executive summary."""
+    prompt = f"You are a Cybersecurity Analyst evaluating a captured attack profile. Summarize this attack data in 4 sentences for a non-technical executive. Focus on what kind of attack it was, the ip, and how the honeypot intercepted it. Do not use any markdown formatting, bullet points, or introductory phrases like 'Here is the summary'. Raw string only.\n\nATTACK DATA:\n{json.dumps(threat_record)}"
+    
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.post(OLLAMA_URL, json={
+                "model": MODEL_NAME,
+                "prompt": prompt,
+                "stream": False,
+                "options": { "temperature": 0.4 }
+            }, timeout=30.0) as resp:
+                if resp.status == 200:
+                    result = await resp.json()
+                    return result.get("response", "").strip()
+        except Exception as e:
+            logger.warning(f"Ollama executive summary failed: {e}")
+            
+    return f"On {threat_record.get('timeline', {}).get('first_seen', 'Unknown Date')}, an automated attack originating from {threat_record.get('network', {}).get('entry_ip', 'Unknown IP')} targeted the honeypot interface. The system identified the threat as a {threat_record.get('classification', {}).get('attack_type', 'Unknown')} attempting to execute {len(threat_record.get('payloads', []))} malicious payloads. The active defense engine successfully intercepted the attack, containing the threat within the sandbox and protecting internal resources. No further action is required at this time."
+
+async def generate_recommendations(threat_record: dict) -> list[str]:
+    """Uses LLaMA 3 to generate 3 specific bullet point security recommendations."""
+    prompt = f"You are a Cybersecurity Analyst evaluating a captured attack profile. Based on this attack data, generate exactly 3 specific, actionable security recommendations for the engineering team. Output nothing but the 3 bullet points separated by newlines, do not use markdown asterisks. Do not include intro or outro text.\n\nATTACK DATA:\n{json.dumps(threat_record)}"
+    
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.post(OLLAMA_URL, json={
+                "model": MODEL_NAME,
+                "prompt": prompt,
+                "stream": False,
+                "options": { "temperature": 0.4 }
+            }, timeout=30.0) as resp:
+                if resp.status == 200:
+                    result = await resp.json()
+                    lines = result.get("response", "").strip().split("\n")
+                    clean_lines = [line.replace('*', '').replace('-', '').strip() for line in lines if line.strip()]
+                    return clean_lines[:3]
+        except Exception as e:
+            logger.warning(f"Ollama recommendations failed: {e}")
+            
+    return [
+        "Implement deeper rate limiting on non-authenticated JSON-RPC endpoints.",
+        "Update WAF rules to proactively block the detected Custom Hex Toolchain pattern.",
+        "Rotate any honeypot deployment keys just as a precaution following high-activity encounters."
+    ]

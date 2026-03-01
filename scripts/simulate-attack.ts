@@ -159,29 +159,47 @@ async function attack(name: string, description: string, path: string, headers: 
             console.log(`    [X] DETERMINATION  >> BOT CONFIRMED.`)
             console.log(`    [✓] ACTION         >> Traffic instantly rerouted to Generative LLM Honeypot.`)
 
-            // 4. Inject a fake Web3 RPC call to trigger the polymorphic honeypot backend
-            console.log(`    [*] INJECTING      >> Sending fake eth_sendTransaction payload to backend...`)
-            await fetch(`${API_BASE}/api/rpc`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-BB-Threat-Score': result.score.toString(),
-                    'X-BB-Tier': result.tier,
-                    'X-BB-Session': 'simulated-session-' + Date.now().toString(),
-                    ...headers,
-                },
-                body: JSON.stringify({
-                    jsonrpc: "2.0",
-                    method: "eth_sendTransaction",
-                    params: [{
+            // 4. Inject a fake Web3 RPC sequence to trigger the polymorphic honeypot backend
+            // We simulate a real MetaMask Drainer sequence so the Trophy Room catches it.
+            const sequence = ["eth_chainId", "eth_accounts", "eth_getBalance", "eth_sendTransaction"]
+            console.log(`    [*] INJECTING      >> Sending fake payload sequence to backend: [${sequence.join(', ')}]`)
+
+            for (let i = 0; i < sequence.length; i++) {
+                const method = sequence[i]
+                let params: any[] = []
+
+                if (method === "eth_getBalance") {
+                    params = ["0xAttacker...", "latest"]
+                } else if (method === "eth_sendTransaction") {
+                    params = [{
                         from: "0xAttacker...",
                         to: "0xBaitWallet001...",
                         value: "0xDE0B6B3A7640000" // 1 ETH
-                    }],
-                    id: 1
+                    }]
+                }
+
+                await fetch(`${API_BASE}/api/rpc`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-BB-Threat-Score': result.score.toString(),
+                        'X-BB-Tier': result.tier,
+                        'X-BB-Session': 'simulated-session-' + Date.now().toString(),
+                        ...headers,
+                    },
+                    body: JSON.stringify({
+                        jsonrpc: "2.0",
+                        method: method,
+                        params: params,
+                        id: i + 1
+                    })
                 })
-            })
-            console.log(`    [✓] INJECTED       >> Backend ingested payload.\n`)
+
+                // Slight delay between RPC calls to simulate script execution time
+                await delay(200)
+            }
+
+            console.log(`    [✓] INJECTED       >> Backend ingested sequence.\n`)
 
         } else if (result.tier === 'SUSPICIOUS') {
             console.log(`    [?] DETERMINATION  >> SUSPICIOUS PROXY.`)

@@ -1,0 +1,22 @@
+import { NextResponse } from 'next/server'
+
+const FASTAPI_URL = 'http://127.0.0.1:8000'
+
+export async function GET() {
+    try {
+        const apiRes = await fetch(`${FASTAPI_URL}/api/ledger`, {
+            method: 'GET'
+        })
+
+        if (!apiRes.ok) {
+            console.error("FastAPI returned error status for public ledger:", apiRes.status)
+            return NextResponse.json({ error: "Failed to fetch ledger" }, { status: apiRes.status })
+        }
+
+        const data = await apiRes.json()
+        return NextResponse.json(data)
+    } catch (err) {
+        console.error("Failed to proxy ledger request:", err)
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+    }
+}

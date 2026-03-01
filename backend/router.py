@@ -75,6 +75,30 @@ async def get_dashboard_stats(request: Request):
         }
     }
 
+class DefendRequest(BaseModel):
+    ip_address: str
+    defense_type: str # "TAR_PIT" or "POISONED_ABI"
+
+@router.post("/api/dashboard/defend")
+async def deploy_active_defense(request: Request, body: DefendRequest):
+    """
+    Protected endpoint. Deploys a retaliation payload against a specific IP.
+    """
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return JsonRpcErrorResponse(error=JsonRpcError(code=-32000, message="Unauthorized"), id=None)
+        
+    token = auth_header.split(" ")[1]
+    try:
+        verify_token(token)
+    except ValueError:
+        return JsonRpcErrorResponse(error=JsonRpcError(code=-32000, message="Unauthorized"), id=None)
+        
+    from world_state import manager as ws_manager
+    ws_manager.deploy_defense(body.ip_address, body.defense_type)
+    
+    return {"status": "deployed", "ip": body.ip_address, "weapon": body.defense_type}
+
 @router.post("/api/flush")
 async def force_flush():
     """Forces the intelligence logger to flush all active dossiers to SQLite."""
@@ -87,6 +111,74 @@ async def force_flush():
         flushed.append(sess_id)
         
     return {"status": "ok", "flushed_count": len(flushed)}
+
+from fastapi.responses import StreamingResponse
+
+@router.get("/api/report/{threat_id}")
+async def download_threat_report(request: Request, threat_id: str):
+    """
+    Generates and downloads a synthesized PDF Threat Report using 
+    Generative AI and the raw session captures.
+    """
+    auth_header = request.headers.get("Authorization", "")
+    # In a full production build, we would secure this with the same verify_token
+    # But for ease of debugging/downloading via a standard anchor tag in the 
+    # hackathon demo, we'll allow standard API access.
+    
+    from database import get_threat_by_id
+    from llm import generate_executive_summary, generate_recommendations
+    from report_generator import generate_threat_pdf
+    
+    threat_record = get_threat_by_id(threat_id)
+    if not threat_record:
+        raise HTTPException(status_code=404, detail="Threat dossier not found")
+        
+    # Generate the AI sections
+    exec_summary = await generate_executive_summary(threat_record)
+    recommendations = await generate_recommendations(threat_record)
+    
+    # Render the canvas
+    pdf_bytes = generate_threat_pdf(threat_record, exec_summary, recommendations)
+    
+    # Return as a downloadable stream
+    return StreamingResponse(
+        pdf_bytes, 
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=Threat_Intel_Report_{threat_id}.pdf"
+        }
+    )
+
+import hashlib
+
+@router.get("/api/ledger")
+async def get_public_ledger():
+    """
+    Public endpoint for the Immutable Threat Ledger.
+    Returns anonymized threat data and SHA-256 hashes simulating blockchain TXs.
+    """
+    from database import get_recent_threats
+    logs = get_recent_threats(limit=100)
+    
+    ledger_entries = []
+    for log in logs:
+        timeline = log.get("timeline", {})
+        ts = timeline.get("first_seen", "Unknown")
+        
+        # Hash the entire raw JSON to simulate an immutable CID/TxHash
+        raw_json = json.dumps(log, sort_keys=True)
+        tx_hash = "0x" + hashlib.sha256(raw_json.encode('utf-8')).hexdigest()
+        
+        ledger_entries.append({
+            "threat_id": log.get("threat_id", "UNKNOWN"),
+            "timestamp": ts,
+            "ip": log.get("network", {}).get("entry_ip", "0.0.0.0"),
+            "tier": log.get("network", {}).get("tier", "UNKNOWN"),
+            "toolchain": log.get("classification", {}).get("inferred_toolchain", "Unknown"),
+            "tx_hash": tx_hash
+        })
+        
+    return {"ledger": ledger_entries}
 
 @router.post("/api/rpc")
 async def handle_rpc(request: Request):

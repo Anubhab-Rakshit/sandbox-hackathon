@@ -100,12 +100,18 @@ class WorldStateManager:
     """In-memory dictionary holding all active attacker sessions."""
     def __init__(self):
         self.sessions: Dict[str, WorldState] = {}
+        self.active_defenses: Dict[str, str] = {} # Maps IP Address -> "TAR_PIT" | "POISONED_ABI"
         self.initial_block_height = 19247832 # Used as fallback if BlockCypher fails
 
     def get_or_create(self, session_id: str, threat_score: int, tier: int) -> WorldState:
         if session_id not in self.sessions:
             self.sessions[session_id] = WorldState(session_id, threat_score, tier)
         return self.sessions[session_id]
+
+    def deploy_defense(self, ip_address: str, defense_type: str):
+        """Activates a specific offensive countermeasure against an IP."""
+        self.active_defenses[ip_address] = defense_type
+        print(f"🚨 ACTIVE DEFENSE DEPLOYED: {defense_type} against {ip_address}")
 
     def cleanup_expired(self, max_age_seconds: int = 7200):
         """Removes sessions older than 2 hours to prevent OOM."""

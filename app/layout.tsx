@@ -4,6 +4,8 @@ import './globals.css'
 import { headers } from 'next/headers'
 import { PolyProvider } from '@/components/poly/PolyProvider'
 import { PolyErrorBoundary } from '@/components/poly/PolyErrorBoundary'
+import { WalletProvider } from '@/components/WalletProvider'
+
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700'],
@@ -54,7 +56,9 @@ export default function RootLayout({
       <body className={`${spaceGrotesk.className} overflow-hidden h-screen w-full`}>
         <PolyErrorBoundary>
           <PolyProvider serverSeed={seed}>
-            {children}
+            <WalletProvider>
+              {children}
+            </WalletProvider>
           </PolyProvider>
         </PolyErrorBoundary>
       </body>

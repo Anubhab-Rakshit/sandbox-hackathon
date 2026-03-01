@@ -7,3 +7,4 @@ PyJWT
 passlib[bcrypt]
 async-timeout
 colorama
+reportlab

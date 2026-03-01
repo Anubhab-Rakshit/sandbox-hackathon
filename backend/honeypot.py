@@ -47,6 +47,33 @@ class HoneypotEngine:
             
             intel_logger.record_payload(session_id, method, payload, classification.attack_type)
 
+        # 1.5 ACTIVE DEFENSE INTERCEPT (THE KILL SWITCHES)
+        # --------------------------------------------------------------------
+        active_weapon = ws_manager.active_defenses.get(ip)
+        if active_weapon == "TAR_PIT":
+            # Tactic: Tarpitting. 
+            # We exhaust the attacker's connection pool by intentionally 
+            # hanging their request for 30 seconds before doing anything else.
+            print(f"[{ip}] 🛡️ TAR_PIT ENGAGED. Hanging thread for 30s...")
+            await asyncio.sleep(30.0)
+            
+        elif active_weapon == "POISONED_ABI":
+            # Tactic: Buffer Overflow / Parser Denial of Service.
+            # We return an infinitely recursive JSON object that crashes poorly 
+            # written JS/Python scraper dictionaries on the attacker's end.
+            print(f"[{ip}] ☣️ POISONED_ABI ENGAGED. Detonating JSON bomb...")
+            
+            # Create a deeply nested structure that exceeds standard parser limits
+            bomb = "vulnerability"
+            for _ in range(500): 
+                bomb = {"payload": bomb}
+                
+            return {
+                "jsonrpc": "2.0", 
+                "result": bomb,
+                "id": "fatal_overflow"
+            }
+
         # 2. Extract standard JSON-RPC ID for response matching
         req_id = None
         try:

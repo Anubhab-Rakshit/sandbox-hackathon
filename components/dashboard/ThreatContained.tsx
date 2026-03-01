@@ -165,9 +165,10 @@ function MazeCorridor({ phase }: { phase: number }) {
 interface ThreatContainedProps {
     open: boolean
     onClose: () => void
+    threatId?: string | null
 }
 
-export default function ThreatContained({ open, onClose }: ThreatContainedProps) {
+export default function ThreatContained({ open, onClose, threatId }: ThreatContainedProps) {
     const [phase, setPhase] = useState(0)
     const [timeWasted, setTimeWasted] = useState(0)
     const [revealed, setRevealed] = useState(false)
@@ -242,7 +243,7 @@ export default function ThreatContained({ open, onClose }: ThreatContainedProps)
                         THREAT CONTAINED
                     </h1>
                     <p className="text-[8px] text-[#FF2020] tracking-[0.5em] uppercase opacity-60 mt-1">
-                        HONEYPOT SESSION {ATTACKER_DATA.sessId}
+                        HONEYPOT SESSION {threatId || ATTACKER_DATA.sessId}
                     </p>
                 </div>
 
@@ -306,7 +307,16 @@ export default function ThreatContained({ open, onClose }: ThreatContainedProps)
 
                 {/* ── Action Buttons ───────────────────────────── */}
                 <div className="flex gap-3 px-8 mt-5 mb-6">
-                    <button className="tc-btn tc-btn-primary flex-1">
+                    <button
+                        onClick={() => {
+                            if (threatId) {
+                                window.open(`/api/report/${threatId}`, '_blank')
+                            } else {
+                                alert("No active threat ID to export.")
+                            }
+                        }}
+                        className="tc-btn tc-btn-primary flex-1 hover:bg-[#FF2020] hover:text-white transition-colors"
+                    >
                         <span className="text-[9px]">↓</span> EXPORT THREAT REPORT
                     </button>
                     <button className="tc-btn tc-btn-secondary flex-1">

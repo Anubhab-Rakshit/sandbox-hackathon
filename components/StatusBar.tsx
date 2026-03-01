@@ -43,14 +43,21 @@ export default function StatusBar() {
     const displayThreats = useAnimatedValue(threats)
     const displayDomMuts = useAnimatedValue(domMuts)
 
-    // Nodes: +1-3 every 8-12 seconds
+    // Nodes: Poll real protected node state from API
     useEffect(() => {
-        const tick = () => {
-            setNodes(prev => prev + Math.floor(Math.random() * 3 + 1))
-            timerId = setTimeout(tick, (8 + Math.random() * 4) * 1000)
+        const fetchNodes = async () => {
+            try {
+                const res = await fetch('/api/protect')
+                if (res.ok) {
+                    const data = await res.json()
+                    setNodes(data.count)
+                }
+            } catch (err) { }
         }
-        let timerId = setTimeout(tick, 8000 + Math.random() * 4000)
-        return () => clearTimeout(timerId)
+
+        fetchNodes()
+        const timerId = setInterval(fetchNodes, 2500)
+        return () => clearInterval(timerId)
     }, [])
 
     // Threats: +1 every 15-25 seconds

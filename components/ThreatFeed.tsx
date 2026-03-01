@@ -175,16 +175,64 @@ export default function ThreatFeed() {
                             </div>
                             {/* Address with strikethrough animation */}
                             <div
-                                className="text-[7px] truncate mb-0.5 relative feed-addr-strike"
+                                className="text-[7px] truncate mb-1 relative feed-addr-strike"
                                 style={{ color: 'rgba(180,180,220,0.45)', fontFamily: 'var(--font-mono)' }}
                             >
                                 {entry.from} → {entry.to}
                             </div>
-                            <div
-                                className="text-[6.5px] tracking-[0.1em] uppercase font-semibold"
-                                style={{ color: 'var(--cyan)' }}
-                            >
-                                BLOCKED ✓
+
+                            {/* ACTIVE DEFENSE CONTROLS */}
+                            <div className="flex items-center gap-2 mt-1 fade-in">
+                                <button
+                                    onClick={async () => {
+                                        if (!token) return
+                                        try {
+                                            await fetch('/api/dashboard/defend', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Authorization': `Bearer ${token}`,
+                                                    'Content-Type': 'application/json'
+                                                },
+                                                body: JSON.stringify({ ip_address: entry.from, defense_type: 'TAR_PIT' })
+                                            })
+                                            // Optimistic UI update
+                                            const btn = document.getElementById(`tarpit-btn-${entry.id}`)
+                                            if (btn) {
+                                                btn.innerText = 'DEPLOYED'
+                                                btn.classList.add('bg-[#1a1a1a]', 'text-[#FFD700]', 'border-[#FFD700]')
+                                            }
+                                        } catch (e) { }
+                                    }}
+                                    id={`tarpit-btn-${entry.id}`}
+                                    className="px-2 py-0.5 text-[6px] tracking-widest font-bold border border-white/20 hover:border-white hover:bg-white hover:text-black transition-colors rounded-[2px]"
+                                >
+                                    DEPLOY TAR-PIT
+                                </button>
+
+                                <button
+                                    onClick={async () => {
+                                        if (!token) return
+                                        try {
+                                            await fetch('/api/dashboard/defend', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Authorization': `Bearer ${token}`,
+                                                    'Content-Type': 'application/json'
+                                                },
+                                                body: JSON.stringify({ ip_address: entry.from, defense_type: 'POISONED_ABI' })
+                                            })
+                                            const btn = document.getElementById(`poison-btn-${entry.id}`)
+                                            if (btn) {
+                                                btn.innerText = 'INJECTED'
+                                                btn.classList.add('bg-[#FF003C]', 'text-white', 'border-transparent')
+                                            }
+                                        } catch (e) { }
+                                    }}
+                                    id={`poison-btn-${entry.id}`}
+                                    className="px-2 py-0.5 text-[6px] tracking-widest font-bold border border-[#FF003C]/30 text-[#FF003C] hover:border-[#FF003C] hover:bg-[#FF003C]/10 transition-colors rounded-[2px]"
+                                >
+                                    INJECT POISON ABI
+                                </button>
                             </div>
                         </div>
                     ))}

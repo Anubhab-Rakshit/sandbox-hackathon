@@ -136,3 +136,20 @@ def get_dashboard_aggregates() -> Dict[str, Any]:
             "taxonomy": taxonomy,
             "total_generations": total_generations
         }
+
+def get_threat_by_id(threat_id: str) -> Dict[str, Any]:
+    """Retrieves a specific threat dossier by its TR-... ID."""
+    if not DB_PATH.exists():
+        return None
+        
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT full_record FROM threat_logs WHERE id = ?", (threat_id,))
+        row = cursor.fetchone()
+        
+        if row:
+            return json.loads(row['full_record'])
+            
+    return None
