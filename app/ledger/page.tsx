@@ -124,17 +124,17 @@ export default function LedgerPage() {
 
                                             return (
                                                 <tr key={entry.threat_id} className="hover:bg-white/5 transition-colors">
-                                                    <td className="px-6 py-4 whitespace-nowrap text-[#555]">{entry.timestamp.split('.')[0].replace('T', ' ')}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-[#aaa]">{entry.timestamp.split('.')[0].replace('T', ' ')}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <span className="text-[#00FF41]">{entry.threat_id}</span>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-[#aaa]">{entry.ip}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-[#ccc]">{entry.ip}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span className="px-2 py-1 bg-[#222] text-[#ccc] border border-[#333] rounded-[2px]">
+                                                        <span className="px-2 py-1 bg-[#222] text-[#e0e0e0] border border-[#444] rounded-[2px]">
                                                             {entry.toolchain}
                                                         </span>
                                                     </td>
-                                                    <td className="px-6 py-4 text-[#888] font-mono tracking-tight text-[10px]">
+                                                    <td className="px-6 py-4 text-[#aaa] font-mono tracking-tight text-[10px]">
                                                         {entry.tx_hash.substring(0, 16)}...{entry.tx_hash.substring(entry.tx_hash.length - 12)}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -150,7 +150,7 @@ export default function LedgerPage() {
                                                         ) : (
                                                             <button
                                                                 onClick={() => handleVerify(entry)}
-                                                                className="text-[#666] hover:text-[var(--accent-magenta)] transition-colors tracking-widest uppercase text-[10px]"
+                                                                className="text-[#aaa] hover:text-[#00FFD1] transition-colors tracking-widest uppercase text-[10px]"
                                                             >
                                                                 VERIFY HASH
                                                             </button>
@@ -161,7 +161,7 @@ export default function LedgerPage() {
                                         })}
                                         {entries.length === 0 && (
                                             <tr>
-                                                <td colSpan={6} className="px-6 py-12 text-center text-[#444] tracking-widest">
+                                                <td colSpan={6} className="px-6 py-12 text-center text-[#666] tracking-widest">
                                                     NO THREAT LOGS FOUND IN BLOCK HEIGHT
                                                 </td>
                                             </tr>

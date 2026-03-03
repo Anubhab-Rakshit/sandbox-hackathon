@@ -11,18 +11,9 @@ interface Ripple {
 
 export default function CustomCursor() {
     const dotRef = useRef<HTMLDivElement>(null)
-    const ringRef = useRef<HTMLDivElement>(null)
     const [hovering, setHovering] = useState(false)
     const [ripples, setRipples] = useState<Ripple[]>([])
     const rippleId = useRef(0)
-
-    // Raw mouse position
-    const mx = useRef(0)
-    const my = useRef(0)
-    // Ring (lagging)
-    const rx = useRef(0)
-    const ry = useRef(0)
-    const animRef = useRef<number>()
 
     const spawnRipple = useCallback((x: number, y: number, size = 100) => {
         const id = ++rippleId.current
@@ -34,8 +25,6 @@ export default function CustomCursor() {
 
     useEffect(() => {
         const onMove = (e: MouseEvent) => {
-            mx.current = e.clientX
-            my.current = e.clientY
             if (dotRef.current) {
                 dotRef.current.style.left = e.clientX + 'px'
                 dotRef.current.style.top = e.clientY + 'px'
@@ -56,18 +45,6 @@ export default function CustomCursor() {
             if (t.closest('button, a, [data-hover]')) setHovering(false)
         }
 
-        // Lagging ring animation
-        function animateRing() {
-            rx.current += (mx.current - rx.current) * 0.12
-            ry.current += (my.current - ry.current) * 0.12
-            if (ringRef.current) {
-                ringRef.current.style.left = rx.current + 'px'
-                ringRef.current.style.top = ry.current + 'px'
-            }
-            animRef.current = requestAnimationFrame(animateRing)
-        }
-        animRef.current = requestAnimationFrame(animateRing)
-
         document.addEventListener('mousemove', onMove)
         document.addEventListener('click', onClick)
         document.addEventListener('mouseover', onOver)
@@ -78,22 +55,15 @@ export default function CustomCursor() {
             document.removeEventListener('click', onClick)
             document.removeEventListener('mouseover', onOver)
             document.removeEventListener('mouseout', onOut)
-            if (animRef.current) cancelAnimationFrame(animRef.current)
         }
     }, [spawnRipple])
 
     return (
         <>
-            {/* Dot */}
+            {/* Sharp cursor dot */}
             <div
                 ref={dotRef}
                 className={`cursor-dot${hovering ? ' hovering' : ''}`}
-                aria-hidden="true"
-            />
-            {/* Lagging ring */}
-            <div
-                ref={ringRef}
-                className={`cursor-ring${hovering ? ' hovering' : ''}`}
                 aria-hidden="true"
             />
             {/* Click ripples */}

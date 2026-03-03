@@ -25,10 +25,10 @@ export default function DashboardHeader() {
                 <span className="text-[11px] font-bold tracking-[0.25em] text-[#00FF41]">
                     BHOOL BHULAIYAA
                 </span>
-                <span className="text-[9px] text-[#333] tracking-[0.15em]">
+                <span className="text-[9px] text-[#555] tracking-[0.15em]">
           //
                 </span>
-                <span className="text-[9px] text-[#555] tracking-[0.15em] uppercase">
+                <span className="text-[9px] text-[#999] tracking-[0.15em] uppercase">
                     Threat Intelligence Center
                 </span>
             </div>
@@ -43,10 +43,10 @@ export default function DashboardHeader() {
                     <span className="w-1.5 h-1.5 rounded-full bg-[#FFB800] animate-pulse" />
                     <span className="text-[#FFB800]">3 SESSIONS</span>
                 </span>
-                <span className="text-[#555]">
+                <span className="text-[#999]">
                     UTC {time}
                 </span>
-                <span className="text-[#333]">
+                <span className="text-[#777]">
                     UPTIME {fmtUptime}
                 </span>
             </div>

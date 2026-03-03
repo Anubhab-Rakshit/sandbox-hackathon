@@ -114,6 +114,65 @@ async def force_flush():
 
 from fastapi.responses import StreamingResponse
 
+@router.get("/api/replay/{threat_id}")
+async def get_session_replay(request: Request, threat_id: str):
+    """
+    Returns the ordered sequence of RPC payloads for a given threat session,
+    enriched with timing deltas so the frontend can replay the attack step by step.
+    Requires Bearer token.
+    """
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return JsonRpcErrorResponse(error=JsonRpcError(code=-32000, message="Unauthorized"), id=None)
+
+    token = auth_header.split(" ")[1]
+    try:
+        verify_token(token)
+    except ValueError:
+        return JsonRpcErrorResponse(error=JsonRpcError(code=-32000, message="Unauthorized"), id=None)
+
+    from database import get_threat_by_id
+    record = get_threat_by_id(threat_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Threat dossier not found")
+
+    payloads = record.get("payloads", [])
+
+    # Calculate inter-request deltas (ms) for replay timing
+    enriched = []
+    prev_ts = None
+    for i, p in enumerate(payloads):
+        try:
+            from datetime import datetime as dt
+            ts_str = p.get("timestamp", "")
+            # Handle both Z-suffix and +00:00 formats
+            ts = dt.fromisoformat(ts_str.replace("Z", "+00:00"))
+            delta_ms = int((ts - prev_ts).total_seconds() * 1000) if prev_ts else 0
+            prev_ts = ts
+        except Exception:
+            delta_ms = 0
+
+        enriched.append({
+            "step": i + 1,
+            "method": p.get("method", "unknown"),
+            "params": p.get("params", "[]"),
+            "decoded_intent": p.get("decoded_intent", ""),
+            "timestamp": p.get("timestamp", ""),
+            "delta_ms": delta_ms,
+        })
+
+    return {
+        "threat_id": record.get("threat_id"),
+        "session_id": record.get("session_id"),
+        "ip": record.get("network", {}).get("entry_ip", "0.0.0.0"),
+        "toolchain": record.get("classification", {}).get("inferred_toolchain", "Unknown"),
+        "attack_type": record.get("classification", {}).get("attack_type", "Unknown"),
+        "total_steps": len(enriched),
+        "time_wasted_seconds": record.get("timeline", {}).get("time_wasted_seconds", 0),
+        "steps": enriched,
+    }
+
+
 @router.get("/api/report/{threat_id}")
 async def download_threat_report(request: Request, threat_id: str):
     """

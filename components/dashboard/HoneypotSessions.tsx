@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useAuth } from '@/components/AuthProvider'
+import SessionReplay from '@/components/dashboard/SessionReplay'
 
 const ATTACK_TYPES = [
     'SQL_INJECTION', 'RPC_PROBING', 'WALLET_DRAIN', 'PATH_TRAVERSAL',
@@ -47,6 +48,7 @@ export default function HoneypotSessions() {
     const [sessions, setSessions] = useState<Session[]>([])
     const containerRef = useRef<HTMLDivElement>(null)
     const { token } = useAuth()
+    const [replayId, setReplayId] = useState<string | null>(null)
 
     useEffect(() => {
         if (!token) return
@@ -101,6 +103,7 @@ export default function HoneypotSessions() {
     }
 
     return (
+        <>
         <div className="h-full flex flex-col">
             <div className="wr-panel-header">
                 <span className="wr-panel-title">LIVE HONEYPOT SESSIONS</span>
@@ -115,25 +118,43 @@ export default function HoneypotSessions() {
                     {sessions.map((s, idx) => (
                         <div
                             key={s.id}
-                            className="wr-session-row"
+                            className="wr-session-row group cursor-pointer"
                             style={{
                                 borderLeftColor: s.severity === 'high' ? '#FF2020' : 'transparent',
                                 opacity: Math.pow(0.97, idx),
                             }}
+                            title={String(s.id).startsWith('TR-') ? 'Click to replay attack sequence' : ''}
+                            onClick={() => {
+                                const sid = String(s.id)
+                                if (sid.startsWith('TR-')) setReplayId(sid)
+                            }}
                         >
-                            <span className="text-[#333] w-[60px] flex-shrink-0">{s.time}</span>
-                            <span className="text-[#555] w-[105px] flex-shrink-0 truncate">{s.ip}</span>
-                            <span className="text-[#666] flex-1 truncate">{s.type}</span>
+                            <span className="text-[#888] w-[60px] flex-shrink-0">{s.time}</span>
+                            <span className="text-[#bbb] w-[105px] flex-shrink-0 truncate">{s.ip}</span>
+                            <span className="text-[#ddd] flex-1 truncate">{s.type}</span>
                             <span
                                 className="text-right flex-shrink-0 font-bold"
                                 style={{ color: statusColor(s.status) }}
                             >
                                 {statusText(s.status)}
                             </span>
+                            {String(s.id).startsWith('TR-') && (
+                                <span className="ml-2 text-[8px] text-[#00FFD1]/40 group-hover:text-[#00FFD1] transition-colors flex-shrink-0">
+                                    ⏵
+                                </span>
+                            )}
                         </div>
                     ))}
                 </div>
             </div>
         </div>
+
+        {replayId && (
+            <SessionReplay
+                threatId={replayId}
+                onClose={() => setReplayId(null)}
+            />
+        )}
+        </>
     )
 }

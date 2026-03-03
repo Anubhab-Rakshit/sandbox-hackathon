@@ -83,11 +83,22 @@ export default function ConnectWallet() {
         return () => clearInterval(glitchInterval)
     }, [isActive])
 
-    // Hover tractor beam
+    // Hover tractor beam — only runs briefly on hover state change then settles
     useEffect(() => {
-        const animate = () => {
-            const target = hovered ? 0.6 : 1.0
-            targetRadiusRef.current += (target - targetRadiusRef.current) * 0.06
+        const target = hovered ? 0.6 : 1.0
+        let lastTs = 0
+        const animate = (ts: number = 0) => {
+            if (ts - lastTs >= 33) {
+                lastTs = ts
+                const current = targetRadiusRef.current
+                const next = current + (target - current) * 0.12
+                targetRadiusRef.current = next
+                // Stop self once settled (within 0.005 of target)
+                if (Math.abs(next - target) < 0.005) {
+                    targetRadiusRef.current = target
+                    return
+                }
+            }
             animRef.current = requestAnimationFrame(animate)
         }
         animRef.current = requestAnimationFrame(animate)
@@ -107,8 +118,15 @@ export default function ConnectWallet() {
         const els = Array.from(container.querySelectorAll('.orbit-particle')) as HTMLDivElement[]
         const W = 240, H = 240
         const cx = W / 2, cy = H / 2
+        let lastOrbitFrame = 0
 
-        function animate() {
+        function animate(ts: number = 0) {
+            // Cap at ~30 fps to reduce CPU heat
+            if (ts - lastOrbitFrame < 33) {
+                localAnimId = requestAnimationFrame(animate)
+                return
+            }
+            lastOrbitFrame = ts
             angleRef.current += 1
 
             const radiusMult = targetRadiusRef.current
@@ -202,7 +220,11 @@ export default function ConnectWallet() {
             }
         }
 
-        // 3. Normal Human Flow
+        // 3. Normal Human Flow — glitch flash before connecting
+        setGlitching(true)
+        await new Promise(r => setTimeout(r, 400)) // brief visual reaction
+        setGlitching(false)
+
         console.log('[Connecting] Firing Ethereum provider request...')
         await connectWallet() // This triggers the MetaMask extension
 

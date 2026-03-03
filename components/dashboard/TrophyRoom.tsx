@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/components/AuthProvider'
+import SessionReplay from '@/components/dashboard/SessionReplay'
 
 interface PayloadLog {
     method: string
@@ -33,6 +34,7 @@ interface ThreatRecord {
 export default function TrophyRoom() {
     const { token } = useAuth()
     const [trophies, setTrophies] = useState<ThreatRecord[]>([])
+    const [replayId, setReplayId] = useState<string | null>(null)
 
     useEffect(() => {
         if (!token) return
@@ -59,6 +61,7 @@ export default function TrophyRoom() {
     }, [token])
 
     return (
+        <>
         <div className="w-full h-full bg-[#030303] overflow-y-auto p-8 border-l border-[#222]">
             <div className="flex items-center gap-4 mb-10">
                 <div className="text-[#FFD700] text-4xl" style={{ textShadow: '0 0 20px rgba(255, 215, 0, 0.3)' }}>🏆</div>
@@ -128,10 +131,29 @@ export default function TrophyRoom() {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Replay Button */}
+                            <div className="mt-4 pt-3 border-t border-[#1a1a1a]">
+                                <button
+                                    onClick={() => setReplayId(t.threat_id)}
+                                    className="w-full text-[9px] tracking-widest py-1.5 border border-[#00FFD1]/30 text-[#00FFD1] bg-[#00FFD1]/5 hover:bg-[#00FFD1]/15 transition-colors font-bold"
+                                >
+                                    ⏵ REPLAY ATTACK SEQUENCE
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </div>
             )}
         </div>
+
+        {/* Session Replay Modal */}
+        {replayId && (
+            <SessionReplay
+                threatId={replayId}
+                onClose={() => setReplayId(null)}
+            />
+        )}
+        </>
     )
 }

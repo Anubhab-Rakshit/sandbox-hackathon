@@ -96,7 +96,7 @@ export default function SystemHealth() {
                     >
                         <Sparkline data={histories[i]} color={displayColor} width={80} height={20} />
                         <div className="flex flex-col">
-                            <span className="text-[6px] text-[#333] tracking-[0.15em] uppercase whitespace-nowrap leading-none">
+                            <span className="text-[6px] text-[#888] tracking-[0.15em] uppercase whitespace-nowrap leading-none">
                                 {m.label}
                             </span>
                             <span
@@ -104,7 +104,7 @@ export default function SystemHealth() {
                                 style={{ color: displayColor }}
                             >
                                 {Math.round(current)}
-                                <span className="text-[7px] text-[#333] ml-0.5">{m.unit}</span>
+                                <span className="text-[7px] text-[#777] ml-0.5">{m.unit}</span>
                             </span>
                         </div>
                     </div>
@@ -114,7 +114,7 @@ export default function SystemHealth() {
             {/* System status */}
             <div className="ml-auto flex items-center gap-2 pl-4">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#00FF41]" />
-                <span className="text-[8px] text-[#333] tracking-widest uppercase">
+                <span className="text-[8px] text-[#888] tracking-widest uppercase">
                     ALL SYSTEMS NOMINAL
                 </span>
             </div>

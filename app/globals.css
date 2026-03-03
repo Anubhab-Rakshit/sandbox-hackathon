@@ -17,8 +17,8 @@
   --danger: #FF4D00;
   --glass-bg: rgba(10, 10, 20, 0.65);
   --glass-border: rgba(61, 0, 184, 0.3);
-  --text-dim: rgba(180, 180, 220, 0.6);
-  --text: rgba(220, 220, 255, 0.88);
+  --text-dim: rgba(200, 215, 240, 0.88);
+  --text: rgba(240, 243, 255, 0.97);
 }
 
 /* ── Houdini: rotating conic-gradient border ───────────── */
@@ -388,29 +388,11 @@ body {
   mix-blend-mode: screen;
 }
 
-.cursor-ring {
-  position: fixed;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 255, 209, 0.45);
-  pointer-events: none;
-  z-index: 9998;
-  transform: translate(-50%, -50%);
-  transition: width 0.25s, height 0.25s, border-color 0.2s;
-}
-
 .cursor-dot.hovering {
   width: 18px;
   height: 18px;
   background: var(--violet);
   box-shadow: 0 0 20px var(--violet), 0 0 40px rgba(123, 47, 255, 0.4);
-}
-
-.cursor-ring.hovering {
-  width: 50px;
-  height: 50px;
-  border-color: rgba(123, 47, 255, 0.7);
 }
 
 /* ── Hex Grid Canvas ───────────────────────────────────── */

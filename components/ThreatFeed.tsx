@@ -60,7 +60,21 @@ export default function ThreatFeed() {
     const { token } = useAuth()
 
     useEffect(() => {
-        if (!token) return
+        if (!token) {
+            // Synthetic demo mode — homepage visitors with no auth see a live-looking feed
+            setEntries([])
+            setBlocked(0)
+            // Seed 2 entries immediately so the panel isn't blank on load
+            setEntries(Array.from({ length: 2 }, () => makeThreat()))
+            setBlocked(2)
+            const synthId = setInterval(() => {
+                setEntries(prev => [makeThreat(), ...prev].slice(0, MAX))
+                setBlocked(prev => prev + 1)
+                setCounterPop(true)
+                setTimeout(() => setCounterPop(false), 300)
+            }, 5000)
+            return () => clearInterval(synthId)
+        }
 
         // Strict real-time mode: start empty
         setEntries([])
@@ -181,7 +195,8 @@ export default function ThreatFeed() {
                                 {entry.from} → {entry.to}
                             </div>
 
-                            {/* ACTIVE DEFENSE CONTROLS */}
+                            {/* ACTIVE DEFENSE CONTROLS — only in authenticated (dashboard) mode */}
+                            {token && (
                             <div className="flex items-center gap-2 mt-1 fade-in">
                                 <button
                                     onClick={async () => {
@@ -234,6 +249,7 @@ export default function ThreatFeed() {
                                     INJECT POISON ABI
                                 </button>
                             </div>
+                            )}
                         </div>
                     ))}
                 </div>

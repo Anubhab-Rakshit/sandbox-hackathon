@@ -21,7 +21,7 @@ export default function Home() {
       <div className="scanline-overlay" />
       <div className="scan-beam" />
       <AmbientLayer />
-      <HexGridCanvas />
+      {/* <HexGridCanvas /> */}
 
       {/* Custom cursor */}
       <CustomCursor />

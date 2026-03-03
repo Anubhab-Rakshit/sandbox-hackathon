@@ -210,7 +210,7 @@ async function attack(name: string, description: string, path: string, headers: 
         }
 
     } catch (err) {
-        console.error(`    [-] Error: Is the Next.js dev server running on localhost:3000?`, err.message, '\n')
+        console.error(`    [-] Error: Is the Next.js dev server running on localhost:3000?`, (err as Error).message, '\n')
     }
 }
 

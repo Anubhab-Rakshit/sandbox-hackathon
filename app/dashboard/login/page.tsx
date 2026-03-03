@@ -70,7 +70,7 @@ export default function LoginPage() {
             <div className="z-10 w-full max-w-sm">
                 <div className="text-center mb-12">
                     <h1 className="text-2xl font-bold tracking-[0.3em] text-[#00FF41] mb-2">BHOOL BHULAIYAA</h1>
-                    <p className="text-[#646464] text-[10px] tracking-widest uppercase">Threat Intelligence Center</p>
+                    <p className="text-[#aaa] text-[10px] tracking-widest uppercase">Threat Intelligence Center</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="bg-[#030303] border border-[#222] p-8 relative">
@@ -123,7 +123,7 @@ export default function LoginPage() {
                     </button>
                 </form>
 
-                <div className="mt-8 text-center text-[9px] text-[#444] tracking-widest uppercase">
+                <div className="mt-8 text-center text-[9px] text-[#777] tracking-widest uppercase">
                     Authorized Personnel Only
                 </div>
             </div>
