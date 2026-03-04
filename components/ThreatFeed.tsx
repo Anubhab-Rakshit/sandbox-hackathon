@@ -3,17 +3,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '@/components/AuthProvider'
 
-const THREAT_TYPES = [
-    { type: 'REENTRANCY', css: 'text-[#FF4D00]', border: '#FF4D00' },
-    { type: 'PHISHING', css: 'text-[#FFB800]', border: '#FFB800' },
-    { type: 'FLASH LOAN', css: 'text-[#4A9EFF]', border: '#4A9EFF' },
-    { type: 'HONEYPOT', css: 'text-[#4A9EFF]', border: '#4A9EFF' },
-    { type: 'SANDWICH', css: 'text-[#4A9EFF]', border: '#4A9EFF' },
-    { type: 'RUG PULL', css: 'text-[#FF2020]', border: '#FF2020' },
-    { type: 'MEV BOT', css: 'text-[#00FFD1]', border: '#00FFD1' },
-    { type: 'FRONTRUN', css: 'text-[#7B2FFF]', border: '#7B2FFF' },
-] as const
-
 interface ThreatEntry {
     id: number | string
     type: string
@@ -22,31 +11,6 @@ interface ThreatEntry {
     from: string
     to: string
     time: string
-}
-
-let entryId = 0
-
-function rAddr() {
-    return '0x' + Array.from({ length: 8 }, () =>
-        Math.floor(Math.random() * 16).toString(16)
-    ).join('') + '…'
-}
-
-function rTime() {
-    return new Date().toLocaleTimeString('en-GB', { hour12: false })
-}
-
-function makeThreat(): ThreatEntry {
-    const t = THREAT_TYPES[Math.floor(Math.random() * THREAT_TYPES.length)]
-    return {
-        id: ++entryId,
-        type: t.type,
-        css: t.css,
-        border: t.border,
-        from: rAddr(),
-        to: rAddr(),
-        time: rTime(),
-    }
 }
 
 const MAX = 25
@@ -60,31 +24,15 @@ export default function ThreatFeed() {
     const { token } = useAuth()
 
     useEffect(() => {
-        if (!token) {
-            // Synthetic demo mode — homepage visitors with no auth see a live-looking feed
-            setEntries([])
-            setBlocked(0)
-            // Seed 2 entries immediately so the panel isn't blank on load
-            setEntries(Array.from({ length: 2 }, () => makeThreat()))
-            setBlocked(2)
-            const synthId = setInterval(() => {
-                setEntries(prev => [makeThreat(), ...prev].slice(0, MAX))
-                setBlocked(prev => prev + 1)
-                setCounterPop(true)
-                setTimeout(() => setCounterPop(false), 300)
-            }, 5000)
-            return () => clearInterval(synthId)
-        }
-
-        // Strict real-time mode: start empty
+        // Always poll — the backend responds without auth, token just grants richer data
         setEntries([])
         setBlocked(0)
 
         async function pollThreats() {
             try {
-                const res = await fetch('/api/threats', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                })
+                const headers: Record<string, string> = {}
+                if (token) headers['Authorization'] = `Bearer ${token}`
+                const res = await fetch('/api/threats', { headers })
                 if (!res.ok) return
                 const data = await res.json()
                 const logs = data.logs.filter((l: any) => l.network?.tier !== 'HUMAN')
@@ -92,8 +40,6 @@ export default function ThreatFeed() {
                 const newLogs = logs.filter((l: any) => !knownLiveIds.current.has(l.threat_id))
                 if (newLogs.length === 0) return
 
-                // Logs are newest first, we want the newest at [0] when prepended.
-                // So mapped should be in the same order (newest first).
                 const formatted = newLogs.map((l: any) => {
                     knownLiveIds.current.add(l.threat_id)
                     const date = new Date(l.timeline?.last_active || Date.now())
@@ -167,6 +113,14 @@ export default function ThreatFeed() {
             {/* Feed entries */}
             <div className="flex-1 overflow-hidden relative z-10">
                 <div className="flex flex-col">
+                    {entries.length === 0 && (
+                        <div className="flex flex-col items-center justify-center h-40 gap-2 opacity-40">
+                            <div className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse" />
+                            <span className="text-[7px] tracking-[0.25em] uppercase font-mono" style={{ color: 'var(--text-dim)' }}>
+                                Monitoring...
+                            </span>
+                        </div>
+                    )}
                     {entries.map((entry, idx) => (
                         <div
                             key={entry.id}

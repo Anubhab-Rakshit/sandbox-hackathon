@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 const FASTAPI_URL = 'http://127.0.0.1:8000'
 
 export async function GET() {
     try {
         const apiRes = await fetch(`${FASTAPI_URL}/api/ledger`, {
-            method: 'GET'
+            method: 'GET',
+            cache: 'no-store',
         })
 
         if (!apiRes.ok) {

@@ -4,34 +4,57 @@ import { getBotStats } from '@/lib/db'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-// The Python backend is running locally on 8000
 const FASTAPI_URL = 'http://127.0.0.1:8000'
+
+// Server-side token cache — so the public homepage can still fetch real threat data
+// without requiring the user to be logged in.
+let cachedServerToken: string | null = null
+let tokenExpiry = 0
+
+async function getServerToken(): Promise<string | null> {
+    if (cachedServerToken && Date.now() < tokenExpiry) return cachedServerToken
+    try {
+        const res = await fetch(`${FASTAPI_URL}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: process.env.ADMIN_USER ?? 'bhool',
+                password: process.env.ADMIN_PASS ?? 'bhulaiyaa2026',
+            }),
+            signal: AbortSignal.timeout(2000),
+        })
+        if (!res.ok) return null
+        const data = await res.json()
+        cachedServerToken = data.token ?? null
+        // Refresh 30 min before the 8-hour expiry
+        tokenExpiry = Date.now() + (7.5 * 60 * 60 * 1000)
+        return cachedServerToken
+    } catch {
+        return null
+    }
+}
 
 export async function GET(request: NextRequest) {
     try {
-        // We still fetch the stats from our local Next.js metrics DB
         const stats: any = getBotStats()
 
-        // Extract the Authorization header (Bearer JWT) sent by the React frontend
-        const authHeader = request.headers.get('authorization')
-        const fetchHeaders: Record<string, string> = {}
-        if (authHeader) {
-            fetchHeaders['Authorization'] = authHeader
-        }
+        // Prefer the user's own token; fall back to auto server token
+        const userHeader = request.headers.get('authorization')
+        const serverToken = userHeader ? null : await getServerToken()
+        const authHeader = userHeader ?? (serverToken ? `Bearer ${serverToken}` : null)
+        const fetchHeaders: Record<string, string> = authHeader
+            ? { 'Authorization': authHeader }
+            : {}
 
-        // But the complex ThreatLogs now come from the FastAPI Intelligence logger
         let logs = []
         try {
             const apiRes = await fetch(`${FASTAPI_URL}/api/dashboard`, {
                 headers: fetchHeaders,
-                // Short timeout so the dashboard never hangs if python is down
                 signal: AbortSignal.timeout(1500)
             })
             if (apiRes.ok) {
                 const data = await apiRes.json()
                 logs = data.logs || []
-
-                // Merge the advanced Python backend aggregates (Taxonomy, Mutation counts)
                 if (data.stats) {
                     stats.taxonomy = data.stats.taxonomy || []
                     stats.mutations_total = data.stats.mutations_total || 0

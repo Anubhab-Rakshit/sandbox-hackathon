@@ -161,7 +161,7 @@ export default function ApiDocsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#1b1b1b] text-white font-mono">
+        <div className="h-screen overflow-y-auto bg-[#1b1b1b] text-white font-mono" style={{ cursor: 'auto' }}>
             {/* ── Top Banner ─────────────────────────────────── */}
             <div className="bg-[#0a0a0a] border-b border-[#333] px-8 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">

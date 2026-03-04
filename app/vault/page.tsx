@@ -14,6 +14,12 @@ export default function VaultPage() {
     const [stakeAmount, setStakeAmount] = useState('0.0')
     const [isStaking, setIsStaking] = useState(false)
     const [trapped, setTrapped] = useState(false)
+    const [notification, setNotification] = useState<string | null>(null)
+
+    const showNotification = (msg: string) => {
+        setNotification(msg)
+        setTimeout(() => setNotification(null), 4000)
+    }
 
     // Simulate a fake total value locked that slowly ticks up
     const tvlBase = 143502.50
@@ -29,7 +35,7 @@ export default function VaultPage() {
         // Simulate block confirmation delay
         await new Promise(r => setTimeout(r, 2000))
         setIsStaking(false)
-        alert('Staking Contract Paused. Please try again later.')
+        showNotification('Staking Contract Paused. Please try again later.')
     }
 
     const fireTrap = async (vector: string) => {
@@ -46,7 +52,7 @@ export default function VaultPage() {
                 })
             })
             // Deliberately opaque generic error message to confuse the attacker
-            alert('JSON-RPC Error: execution reverted')
+            showNotification('JSON-RPC Error: execution reverted')
         } catch (e) {
             console.error(e)
         }
@@ -69,6 +75,13 @@ export default function VaultPage() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-12 custom-scrollbar flex items-center justify-center">
+
+                    {/* In-page notification toast */}
+                    {notification && (
+                        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[#0b0c10] border border-[#FF003C] text-[#FF003C] text-xs tracking-widest px-6 py-3 font-mono shadow-[0_0_20px_rgba(255,0,60,0.3)] animate-pulse">
+                            ⚠ {notification}
+                        </div>
+                    )}
 
                     {/* The Honey-Vault UI */}
                     <div className="max-w-2xl w-full">
@@ -139,7 +152,7 @@ export default function VaultPage() {
                             HONEYPOT TRAP: Intentional vulnerability disguised as an 
                             accidental developer console leak 
                            ========================================================= */}
-                        <div className="mt-12 opacity-30 hover:opacity-100 transition-opacity flex justify-center opacity-0 group focus-within:opacity-100">
+                        <div className="mt-12 opacity-0 hover:opacity-100 transition-opacity flex justify-center group focus-within:opacity-100">
                             {/* We write "Admin Config (debug)" in tiny gray text deep below the fold to trick automated DOM scrapers and curious hackers looking for flaws */}
                             <div className="text-center max-w-sm w-full">
                                 <p className="text-[9px] text-[#444] tracking-widest uppercase mb-2">// Dev Debug Panel</p>

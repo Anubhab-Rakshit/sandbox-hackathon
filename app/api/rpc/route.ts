@@ -16,9 +16,10 @@ export async function POST(req: NextRequest) {
 
         const isDemoOverride = req.headers.get('x-force-bot') === 'true'
 
-        const threatScore = isDemoOverride ? '100' : (scoreCookie?.value || '0')
-        const threatTier = isDemoOverride ? 'BOT' : (tierCookie?.value || 'UNKNOWN')
-        const sessionId = sessionCookie?.value || 'anon-session'
+        // Priority: demo override → cookie → incoming X-BB-* header (simulate-attack) → default
+        const threatScore = isDemoOverride ? '100' : (scoreCookie?.value || req.headers.get('x-bb-threat-score') || '0')
+        const threatTier = isDemoOverride ? 'BOT' : (tierCookie?.value || req.headers.get('x-bb-tier') || 'UNKNOWN')
+        const sessionId = sessionCookie?.value || req.headers.get('x-bb-session') || 'anon-session'
 
         // 2. Proxy the raw JSON-RPC payload to the Live Python Honeypot
         // Pass the threat intelligence down via custom headers

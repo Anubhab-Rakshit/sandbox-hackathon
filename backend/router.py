@@ -57,12 +57,24 @@ async def get_dashboard_stats(request: Request):
         return JsonRpcErrorResponse(error=JsonRpcError(code=-32000, message="Unauthorized"), id=None)
         
     from database import get_recent_threats, get_dashboard_aggregates
-    logs = get_recent_threats(limit=50)
+    db_logs = get_recent_threats(limit=50)
     aggs = get_dashboard_aggregates()
     
     # Analyze the active memory array to find "LIVE" attacker count for the dashboard
     from intelligence import intel_logger
     active_now = len(intel_logger.active_threats)
+    
+    # Merge live in-memory sessions into the response so the feed
+    # shows threats BEFORE they are flushed to the DB.
+    live_logs = []
+    for rec in intel_logger.active_threats.values():
+        live_logs.append(rec.model_dump())
+    
+    # Deduplicate: DB records already flushed should not appear twice
+    db_ids = {l.get('threat_id') for l in db_logs}
+    unique_live = [l for l in live_logs if l.get('threat_id') not in db_ids]
+    
+    logs = unique_live + db_logs  # live first, then historical
     
     return {
         "logs": logs,

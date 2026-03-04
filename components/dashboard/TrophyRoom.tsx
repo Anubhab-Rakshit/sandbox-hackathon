@@ -45,11 +45,9 @@ export default function TrophyRoom() {
                 })
                 if (res.ok) {
                     const data = await res.json()
-                    // Filter for BOT tiers with advanced tooling
+                    // Filter for BOT tiers
                     const bots = data.logs.filter((l: any) =>
-                        l.network?.tier === 'BOT' &&
-                        l.classification?.inferred_toolchain &&
-                        l.classification?.inferred_toolchain !== 'Unknown Tooling'
+                        l.network?.tier === 'BOT'
                     )
                     setTrophies(bots)
                 }
