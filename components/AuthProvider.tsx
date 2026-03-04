@@ -23,6 +23,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         setIsMounted(true)
+        const stored = localStorage.getItem('bb-auth-token')
+        if (stored) setToken(stored)
     }, [])
 
     useEffect(() => {
@@ -41,11 +43,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const login = (newToken: string) => {
         setToken(newToken)
+        localStorage.setItem('bb-auth-token', newToken)
         router.push('/dashboard')
     }
 
     const logout = () => {
         setToken(null)
+        localStorage.removeItem('bb-auth-token')
         router.push('/dashboard/login')
     }
 

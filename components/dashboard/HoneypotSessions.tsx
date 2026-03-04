@@ -115,13 +115,12 @@ export default function HoneypotSessions() {
                 <div className="wr-scanline" />
 
                 <div className="flex flex-col">
-                    {sessions.map((s, idx) => (
+                   {sessions.map((s, idx) => (
                         <div
                             key={s.id}
                             className="wr-session-row group cursor-pointer"
                             style={{
-                                borderLeftColor: s.severity === 'high' ? '#FF2020' : 'transparent',
-                                opacity: Math.pow(0.97, idx),
+                                borderLeftColor: s.severity === 'high' ? '#FF2020' : s.severity === 'medium' ? '#FFB800' : 'transparent',
                             }}
                             title={String(s.id).startsWith('TR-') ? 'Click to replay attack sequence' : ''}
                             onClick={() => {
@@ -129,20 +128,23 @@ export default function HoneypotSessions() {
                                 if (sid.startsWith('TR-')) setReplayId(sid)
                             }}
                         >
-                            <span className="text-[#888] w-[60px] flex-shrink-0">{s.time}</span>
-                            <span className="text-[#bbb] w-[105px] flex-shrink-0 truncate">{s.ip}</span>
-                            <span className="text-[#ddd] flex-1 truncate">{s.type}</span>
+                            <span className="text-[#aaaaaa] w-[60px] flex-shrink-0">{s.time}</span>
+                            <span className="text-[#e0e0e0] w-[105px] flex-shrink-0 truncate font-mono">{s.ip}</span>
+                            <span className="text-white flex-1 truncate font-bold tracking-wide">{s.type}</span>
                             <span
-                                className="text-right flex-shrink-0 font-bold"
+                                className="text-right flex-shrink-0 font-bold text-[11px]"
                                 style={{ color: statusColor(s.status) }}
                             >
                                 {statusText(s.status)}
                             </span>
-                            {String(s.id).startsWith('TR-') && (
-                                <span className="ml-2 text-[8px] text-[#00FFD1]/40 group-hover:text-[#00FFD1] transition-colors flex-shrink-0">
-                                    ⏵
-                                </span>
-                            )}
+                            {/* Arrow — was text-[8px], now text-lg and always faintly visible */}
+                            <span className={`ml-3 flex-shrink-0 transition-all duration-150 text-lg leading-none ${
+                                String(s.id).startsWith('TR-')
+                                    ? 'text-[#00FFD1]/50 group-hover:text-[#00FFD1] group-hover:scale-125'
+                                    : 'text-[#ffffff]/10'
+                            }`}>
+                                ▶
+                            </span>
                         </div>
                     ))}
                 </div>

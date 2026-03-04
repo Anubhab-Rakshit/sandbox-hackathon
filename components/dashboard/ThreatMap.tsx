@@ -152,23 +152,26 @@ export default function ThreatMap() {
                     className="w-full h-full"
                     aria-label="Global threat map"
                 >
+                    {/* Ocean background */}
+                    <rect x="0" y="0" width="580" height="200" fill="#020d06" />
+
                     {/* Grid lines */}
                     {Array.from({ length: 12 }, (_, i) => (
                         <line key={`v${i}`} x1={i * 50} y1="0" x2={i * 50} y2="200"
-                            stroke="#111" strokeWidth="0.3" />
+                            stroke="#0d2010" strokeWidth="0.5" />
                     ))}
                     {Array.from({ length: 8 }, (_, i) => (
                         <line key={`h${i}`} x1="0" y1={i * 30} x2="580" y2={i * 30}
-                            stroke="#111" strokeWidth="0.3" />
+                            stroke="#0d2010" strokeWidth="0.5" />
                     ))}
 
-                    {/* World outline */}
+                    {/* World outline — filled continents */}
                     <path
                         d={WORLD_PATH}
-                        fill="none"
-                        stroke="#222"
+                        fill="#0a2410"
+                        stroke="#1a6630"
                         strokeWidth="0.8"
-                        opacity="0.7"
+                        opacity="0.9"
                     />
 
                     {/* Honeypot locations (sustained amber glow) */}
@@ -221,7 +224,7 @@ export default function ThreatMap() {
                 </svg>
 
                 {/* Legend */}
-                <div className="absolute bottom-2 left-3 flex items-center gap-4 text-[8px] text-[#444]">
+                <div className="absolute bottom-2 left-3 flex items-center gap-4 text-[8px] text-[#888]">
                     <span className="flex items-center gap-1">
                         <span className="w-2 h-2 rounded-full bg-[#FF2020]" /> ATTACK ORIGIN
                     </span>
