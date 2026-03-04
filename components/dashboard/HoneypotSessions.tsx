@@ -71,8 +71,10 @@ export default function HoneypotSessions() {
                     return {
                         id: l.threat_id,
                         time: date.toLocaleTimeString('en-GB', { hour12: false }),
-                        ip: l.network?.entry_ip || 'UNKNOWN',
-                        type: l.classification?.attack_type || 'UNKNOWN',
+                        ip: l.network?.entry_ip || '—',
+                        type: l.classification?.attack_type
+                            ? l.classification.attack_type
+                            : l.network?.tier === 'BOT' ? 'BOT_PROBE' : 'SUSPICIOUS_TRAFFIC',
                         status,
                         severity,
                     }

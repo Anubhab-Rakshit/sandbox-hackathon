@@ -115,6 +115,18 @@ class ThreatIntelligenceLogger:
             if advanced_inference:
                 # Upgrade their inferred toolchain with our definitive sequence deduction
                 record.classification.inferred_toolchain = advanced_inference
+
+                # Also promote the attack_type to match the identified pattern
+                toolchain_to_type = {
+                    "MetaMask Drainer Script": "WALLET_DRAINER",
+                    "Exploit Executer (Targeted)": "EXPLOIT_EXECUTION",
+                    "Automated Arbitrage/MEV Bot": "MEV_BOT_PROBE",
+                    "Node Indexer Scraping Script": "DATA_SCRAPING",
+                    "Vuln Scanner (Recon)": "CONTRACT_RECON",
+                }
+                resolved_type = toolchain_to_type.get(advanced_inference)
+                if resolved_type:
+                    record.classification.attack_type = resolved_type
                 
                 # If they were classified as script_kiddie but we detected a targeted drainer/bot
                 if record.classification.sophistication == "script_kiddie":

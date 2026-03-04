@@ -146,6 +146,13 @@ async def get_session_replay(request: Request, threat_id: str):
     from database import get_threat_by_id
     record = get_threat_by_id(threat_id)
     if not record:
+        # Session may still be live in memory and not yet flushed to SQLite
+        from intelligence import intel_logger
+        for sess_record in intel_logger.active_threats.values():
+            if sess_record.threat_id == threat_id:
+                record = sess_record.model_dump()
+                break
+    if not record:
         raise HTTPException(status_code=404, detail="Threat dossier not found")
 
     payloads = record.get("payloads", [])

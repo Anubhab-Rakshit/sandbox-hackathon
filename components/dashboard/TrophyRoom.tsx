@@ -90,7 +90,10 @@ export default function TrophyRoom() {
                             <div className="flex justify-between items-start mb-5">
                                 <div>
                                     <div className="text-[11px] tracking-widest text-[#FFD700] mb-1 font-bold">
-                                        {t.classification.inferred_toolchain}
+                                        {t.classification.inferred_toolchain && t.classification.inferred_toolchain !== 'Unknown Tooling'
+                                            ? t.classification.inferred_toolchain
+                                            : t.classification.attack_type || 'Unclassified Attacker'
+                                        }
                                     </div>
                                     <div className="text-xs text-white font-mono opacity-80 flex items-center gap-2">
                                         <span className="text-[#555] text-[9px] uppercase tracking-widest">TARGET</span>
