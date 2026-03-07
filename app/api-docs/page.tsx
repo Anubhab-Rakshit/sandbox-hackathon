@@ -125,7 +125,7 @@ export default function ApiDocsPage() {
         }).catch(() => { })
     }, [])
 
-    async function handleExecute(ep: typeof FAKE_ENDPOINTS[0], idx: number) {
+    async function handleExecute(ep: typeof FAKE_ENDPOINTS[0]) {
         setExecuting(true)
         setExecResult(null)
 
@@ -239,7 +239,7 @@ export default function ApiDocsPage() {
                             <div className="flex-1 h-px bg-[#222]" />
                         </div>
 
-                        {FAKE_ENDPOINTS.filter(ep => ep.tag === tag).map((ep, rawIdx) => {
+                        {FAKE_ENDPOINTS.filter(ep => ep.tag === tag).map((ep) => {
                             const idx = FAKE_ENDPOINTS.indexOf(ep)
                             const isExpanded = expanded === idx
                             const isTrying = tryOpen === idx
@@ -334,7 +334,7 @@ export default function ApiDocsPage() {
                                                                 color: METHOD_COLORS[ep.method],
                                                             }}
                                                             disabled={executing}
-                                                            onClick={() => handleExecute(ep, idx)}
+                                                            onClick={() => handleExecute(ep)}
                                                         >
                                                             {executing ? '⟳  EXECUTING...' : `⚡  EXECUTE ${ep.method}`}
                                                         </button>

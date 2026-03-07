@@ -66,7 +66,12 @@ class ThreatIntelligenceLogger:
         # Fire and forget asynchronous geolocation enrichment
         if geolocate is not None:
             # Create task without awaiting so we don't block the high-speed Next.js proxy
-            asyncio.create_task(self._enrich_geo(session_id, ip))
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(self._enrich_geo(session_id, ip))
+            except RuntimeError:
+                # No running event loop (e.g. sync test scripts); skip async enrichment safely.
+                pass
             
         return record
 
@@ -135,6 +140,22 @@ class ThreatIntelligenceLogger:
             import traceback
             print(f"Sequence inference soft-failed: {e}")
             traceback.print_exc()
+
+        # 5. Re-enrich ATT&CK metadata and trigger reason based on evolved attack_type
+        try:
+            from containment import get_attack_technique, build_trigger_reason
+            tech = get_attack_technique(record.classification.attack_type)
+            record.classification.attack_technique_id = tech.get("technique_id")
+            record.classification.attack_technique_name = tech.get("technique_name")
+            record.classification.attack_tactic = tech.get("tactic")
+            record.classification.trigger_reason = build_trigger_reason(
+                record.classification.attack_type,
+                record.classification.confidence,
+                len(record.payloads),
+                record.network.tier,
+            )
+        except Exception as e:
+            print(f"ATT&CK enrichment soft-failed: {e}")
 
     def escalate(self, session_id: str, new_tier: int):
         if session_id not in self.active_threats:

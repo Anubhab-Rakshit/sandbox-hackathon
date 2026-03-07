@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-
-const FASTAPI_URL = 'http://127.0.0.1:8000'
+import { FASTAPI_URL } from '@/lib/backend-config'
 
 export async function POST(req: NextRequest) {
     try {
@@ -14,11 +13,28 @@ export async function POST(req: NextRequest) {
         const tierCookie = cStore.get('bb-threat-tier')
         const sessionCookie = cStore.get('bb-session-id')
 
-        const isDemoOverride = req.headers.get('x-force-bot') === 'true'
+        let parsedScore: string | null = null
+        let parsedTier: string | null = null
 
-        // Priority: demo override → cookie → incoming X-BB-* header (simulate-attack) → default
-        const threatScore = isDemoOverride ? '100' : (scoreCookie?.value || req.headers.get('x-bb-threat-score') || '0')
-        const threatTier = isDemoOverride ? 'BOT' : (tierCookie?.value || req.headers.get('x-bb-tier') || 'UNKNOWN')
+        if (scoreCookie?.value) {
+            try {
+                const decoded = JSON.parse(scoreCookie.value)
+                if (typeof decoded?.score === 'number') {
+                    parsedScore = String(decoded.score)
+                }
+                if (typeof decoded?.tier === 'string') {
+                    parsedTier = decoded.tier
+                }
+            } catch {
+                if (!Number.isNaN(Number(scoreCookie.value))) {
+                    parsedScore = scoreCookie.value
+                }
+            }
+        }
+
+        // Priority: cookie -> incoming X-BB-* header (simulate attack tooling) -> default
+        const threatScore = parsedScore || req.headers.get('x-bb-threat-score') || '0'
+        const threatTier = tierCookie?.value || parsedTier || req.headers.get('x-bb-tier') || 'UNKNOWN'
         const sessionId = sessionCookie?.value || req.headers.get('x-bb-session') || 'anon-session'
 
         // 2. Proxy the raw JSON-RPC payload to the Live Python Honeypot

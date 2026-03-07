@@ -13,6 +13,22 @@ interface ThreatEntry {
     time: string
 }
 
+interface ThreatApiLog {
+    threat_id: string
+    network?: {
+        tier?: string
+        threat_score?: number
+        entry_ip?: string
+    }
+    timeline?: {
+        last_active?: string
+    }
+}
+
+interface ThreatsApiResponse {
+    logs?: ThreatApiLog[]
+}
+
 const MAX = 25
 
 export default function ThreatFeed() {
@@ -34,21 +50,21 @@ export default function ThreatFeed() {
                 if (token) headers['Authorization'] = `Bearer ${token}`
                 const res = await fetch('/api/threats', { headers })
                 if (!res.ok) return
-                const data = await res.json()
-                const logs = data.logs.filter((l: any) => l.network?.tier !== 'HUMAN')
+                const data: ThreatsApiResponse = await res.json()
+                const logs = (Array.isArray(data.logs) ? data.logs : []).filter((log) => log.network?.tier !== 'HUMAN')
 
-                const newLogs = logs.filter((l: any) => !knownLiveIds.current.has(l.threat_id))
+                const newLogs = logs.filter((log) => !knownLiveIds.current.has(log.threat_id))
                 if (newLogs.length === 0) return
 
-                const formatted = newLogs.map((l: any) => {
-                    knownLiveIds.current.add(l.threat_id)
-                    const date = new Date(l.timeline?.last_active || Date.now())
-                    const tier = l.network?.tier || 'UNKNOWN'
-                    const score = l.network?.threat_score || 0
-                    const ip = l.network?.entry_ip || 'UNKNOWN'
+                const formatted = newLogs.map((log) => {
+                    knownLiveIds.current.add(log.threat_id)
+                    const date = new Date(log.timeline?.last_active || Date.now())
+                    const tier = log.network?.tier || 'UNKNOWN'
+                    const score = log.network?.threat_score || 0
+                    const ip = log.network?.entry_ip || 'UNKNOWN'
 
                     return {
-                        id: l.threat_id as string,
+                        id: log.threat_id,
                         type: `[${tier}] (SCORE: ${score})`,
                         css: tier === 'BOT' ? 'text-[#FF003C]' : 'text-[#FFD700]',
                         border: tier === 'BOT' ? '#FF003C' : '#FFD700',
@@ -63,7 +79,7 @@ export default function ThreatFeed() {
 
                 setCounterPop(true)
                 setTimeout(() => setCounterPop(false), 300)
-            } catch (err) { }
+            } catch { }
         }
         const pollId = setInterval(pollThreats, 1500)
         pollThreats()
@@ -170,7 +186,7 @@ export default function ThreatFeed() {
                                                 btn.innerText = 'DEPLOYED'
                                                 btn.classList.add('bg-[#1a1a1a]', 'text-[#FFD700]', 'border-[#FFD700]')
                                             }
-                                        } catch (e) { }
+                                        } catch { }
                                     }}
                                     id={`tarpit-btn-${entry.id}`}
                                     className="px-2 py-0.5 text-[6px] tracking-widest font-bold border border-white/20 hover:border-white hover:bg-white hover:text-black transition-colors rounded-[2px]"
@@ -195,7 +211,7 @@ export default function ThreatFeed() {
                                                 btn.innerText = 'INJECTED'
                                                 btn.classList.add('bg-[#FF003C]', 'text-white', 'border-transparent')
                                             }
-                                        } catch (e) { }
+                                        } catch { }
                                     }}
                                     id={`poison-btn-${entry.id}`}
                                     className="px-2 py-0.5 text-[6px] tracking-widest font-bold border border-[#FF003C]/30 text-[#FF003C] hover:border-[#FF003C] hover:bg-[#FF003C]/10 transition-colors rounded-[2px]"

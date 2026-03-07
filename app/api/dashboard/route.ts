@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { FASTAPI_URL } from '@/lib/backend-config'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-const FASTAPI_URL = 'http://127.0.0.1:8000'
-
 export async function GET(req: NextRequest) {
     try {
         const authHeader = req.headers.get('Authorization') || ''
+
+        if (!authHeader.startsWith('Bearer ')) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
 
         const apiRes = await fetch(`${FASTAPI_URL}/api/dashboard`, {
             headers: {
@@ -19,13 +22,16 @@ export async function GET(req: NextRequest) {
         })
 
         if (!apiRes.ok) {
-            return NextResponse.json({ logs: [] }, { status: apiRes.status })
+            const errorPayload = apiRes.status === 401
+                ? { error: 'Unauthorized' }
+                : { error: 'Dashboard unavailable' }
+            return NextResponse.json(errorPayload, { status: apiRes.status })
         }
 
         const data = await apiRes.json()
         return NextResponse.json(data)
-    } catch (err) {
-        console.error('Failed to proxy /api/dashboard:', err)
-        return NextResponse.json({ logs: [] }, { status: 503 })
+    } catch (error) {
+        console.error('Failed to proxy /api/dashboard:', error)
+        return NextResponse.json({ error: 'Dashboard proxy unavailable' }, { status: 503 })
     }
 }

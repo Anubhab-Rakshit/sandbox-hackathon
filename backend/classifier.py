@@ -89,12 +89,26 @@ def classify_attack(payload: str, headers: dict) -> AttackClassification:
              
     # Cap confidence
     confidence = min(1.0, confidence)
-    
+
+    # Attach MITRE ATT&CK metadata and SOC trigger reason
+    try:
+        from containment import get_attack_technique, build_trigger_reason
+        tech = get_attack_technique(attack_type)
+        tier = headers.get("x-bb-tier", "UNKNOWN")
+        trigger_reason = build_trigger_reason(attack_type, confidence, 1, tier)
+    except Exception:
+        tech = {}
+        trigger_reason = None
+
     return AttackClassification(
         attack_type=attack_type,
         sophistication=sophistication,
         inferred_toolchain=inferred_toolchain,
-        confidence=confidence
+        confidence=confidence,
+        attack_technique_id=tech.get("technique_id"),
+        attack_technique_name=tech.get("technique_name"),
+        attack_tactic=tech.get("tactic"),
+        trigger_reason=trigger_reason,
     )
 
 def infer_toolchain_from_sequence(payloads: list) -> Optional[str]:

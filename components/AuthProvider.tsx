@@ -22,9 +22,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
 
     useEffect(() => {
-        setIsMounted(true)
         const stored = localStorage.getItem('bb-auth-token')
-        if (stored) setToken(stored)
+        if (!stored) {
+            setIsMounted(true)
+            return
+        }
+        // Validate the stored token against the backend before trusting it.
+        // This catches stale tokens from previous sessions (e.g. after a backend restart).
+        fetch('/api/threats', {
+            headers: { 'Authorization': `Bearer ${stored}` }
+        }).then(res => {
+            if (res.status !== 401) {
+                setToken(stored)
+            } else {
+                localStorage.removeItem('bb-auth-token')
+            }
+        }).catch(() => {
+            // Backend unreachable — trust the stored token optimistically.
+            setToken(stored)
+        }).finally(() => {
+            setIsMounted(true)
+        })
     }, [])
 
     useEffect(() => {

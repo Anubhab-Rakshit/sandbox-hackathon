@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
+import { FASTAPI_URL } from '@/lib/backend-config'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
-
-const FASTAPI_URL = 'http://127.0.0.1:8000'
 
 export async function GET() {
     try {
